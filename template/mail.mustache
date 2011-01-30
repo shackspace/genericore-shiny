@@ -1,0 +1,14 @@
+Hello, Mail!
+
+<table>
+  {{#data}}
+  {{#num_mail_abs}}
+  <tr><td><strong>Number of Mails</strong></td><td></td></tr>
+  <tr><td>last 30 days</td><td>{{month}}</td></tr>
+  <tr><td>last 7 days</td><td>{{week}}</td></tr>
+  <tr><td>last day</td><td>{{day}}</td></tr>
+  <tr><td>last hour</td><td>{{hour}}</td></tr>
+  <tr><td>last 5 minutes</td><td>{{5minutes}}</td></tr>
+  {{/num_mail_abs}}
+  {{/data}}
+</table>

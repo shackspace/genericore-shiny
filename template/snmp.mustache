@@ -1,0 +1,10 @@
+snmp current clients:<br/>
+
+Active Clients: {{num_clients}} <br/>
+
+<table>
+  <tr><td><strong>Mac Address</strong></td><td>IPs</td></tr>
+  {{#mlist}}
+  <tr><td>{{mac}}</td><td>{{ips}}</td></tr>
+  {{/mlist}}
+</table>
