@@ -1,10 +1,15 @@
-snmp current clients:<br/>
+<script>
+setTimeout("document.location.reload()",5000)
+</script>
 
-Active Clients: {{num_clients}} <br/>
+<h1>SNMP User Statistics</h1>
+Last Update:    {{timestamp}}<br/>
+Active Clients: {{num_clients}}<br/><br/>
 
-<table>
-  <tr><td><strong>Mac Address</strong></td><td>IPs</td></tr>
+<table border=1>
+  <tr><th><strong>Mac Address</strong></th><th>IPs</th></tr>
   {{#mlist}}
   <tr><td>{{mac}}</td><td>{{ips}}</td></tr>
   {{/mlist}}
 </table>
+<input type='button' value='Reload' onclick="window.location.reload()"/>

@@ -1,7 +1,8 @@
 #!/usr/bin/python2
 from genericore import Configurable
-import pystache,cherrypy,argparse
+import pystache,cherrypy
 import logging, sys
+from datetime import datetime
 from os import path
 
 MODULE_NAME = 'mail_stats'
@@ -36,6 +37,7 @@ class mail_shiny(Configurable):  #TODO pull out the HTTP server Component
   def process(self,stats):
     log.debug("Received Stats: " + str(stats))
     self.stats[stats['type']] = stats['data']
+    self.stats[stats['type']]['timestamp'] = datetime.now().ctime()
 
   def create_connection(self):
     cherrypy.tree.mount(self)
@@ -76,19 +78,28 @@ class mail_shiny(Configurable):  #TODO pull out the HTTP server Component
       return "No Mail Statistics received yet!"
     return pystache.render(self.templates['mail'],self.stats['mail'])
   mail.exposed=True
+
   def snmp(self):
-    self.load_templates()
-    if not self.stats['snmp']:
+    data = self.stats['snmp']
+    self.load_templates() # only if the template is changing a lot 
+
+    if not data:
       return "No SNMP Statistics received yet!"
+
     stache = {'num_clients' : 0, 'mlist' : []}
-    stache['num_clients'] = len(self.stats['snmp'])
-    for mac,ips in self.stats['snmp'].items():
+    #strip out the timestamp and put it into root object
+    stache['timestamp'] = data['timestamp']
+    del data['timestamp']
+
+    stache['num_clients'] = len(data)
+    for mac,ips in data.items():
       stache['mlist'].append({'mac': mac, 'ips' : ', '.join(ips)})
+    data['timestamp'] = stache['timestamp']
     return pystache.render(self.templates['snmp'],stache)
   snmp.exposed=True
 
   def irc(self): 
-    return pystache.render(self.templates['irc'],self.stats)
+    return pystache.render(self.templates['irc'],self.stats['irc'])
   irc.exposed=True
 
   def close_connection(self):
