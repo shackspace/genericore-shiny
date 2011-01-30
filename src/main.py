@@ -7,23 +7,17 @@ log = logging.getLogger('mail_shiny')
 PROTO_VERSION = 1
 DESCRIPTION = 'Makes Statistics shiny'
 
-
 # set up instances of needed modules
+
 conf = gen.Configurator(PROTO_VERSION,DESCRIPTION)  
-amqp1 = gen.auto_amqp() 
-amqp2 = gen.auto_amqp() 
+multi = gen.multi_amqp() 
 s = mail_shiny()       # the magic mail parsing class
 
-conf.configure([amqp1,amqp2,s]) #set up parser and eval parsed stuff
+conf.configure([multi,s]) #set up parser and eval parsed stuff
 
-#TODO fix this thingy... 
-amqp1.load_conf({'amqp' : {"in" : { "exchange" : "mail_stats"}}})
-amqp2.load_conf({'amqp' : {"in" : { "exchange" : "snmp_src"}}})
 # start network connections
+amqp1,amqp2 = multi.create_connection()
 s.create_connection()
-amqp1.create_connection()
-amqp2.create_connection()
-
 # main method
 def cb (ch,method,header,body):
   log.debug ( "Header %r" % (header,))
@@ -40,6 +34,5 @@ print "waiting for messages"
 try:
   amqp1.start_loop()
 except:
-  amqp1.close_connection()
-  amqp2.close_connection()
+  multi.close_connection() 
   s.close_connection()
