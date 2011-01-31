@@ -1,0 +1,23 @@
+{
+  "shiny": {
+    "amqp": {
+      "connection": {
+        "login": "guest",
+        "password": "guest",
+        "host": "localhost"
+      },
+      "exchanges": {
+        "mail_stats": {
+          "in": {
+            "exchange": "mail_stats"
+          }
+        },
+        "snmp_src": {
+          "in": {
+            "exchange": "snmp_src"
+          }
+        }
+      }
+    }
+  }
+}

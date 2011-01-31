@@ -5,18 +5,16 @@ import logging, sys
 from datetime import datetime
 from os import path
 
-MODULE_NAME = 'mail_stats'
 
-log = logging.getLogger(MODULE_NAME)
+log = logging.getLogger('shiny')
 
 DEFAULT_CONFIG = {
-    MODULE_NAME : {
         "http" : {
           "socket_port" : 8080,
           "socket_host" : "0.0.0.0"
           },
         "template" : {
-            "engine" : "mustache", #currently only mustache is supported
+            "engine" : "mustache", #currently only mustache is supported,so this entry has no effect
             #TODO register modules
             "files" : {
               "mail" : path.join( path.dirname(sys.argv[0]) + "/../template/mail.mustache")  ,
@@ -24,13 +22,14 @@ DEFAULT_CONFIG = {
               "snmp" : path.join( path.dirname(sys.argv[0]) + "/../template/snmp.mustache")  
               }
           }
-      }
 }
 
-class mail_shiny(Configurable):  #TODO pull out the HTTP server Component
+class Shiny(Configurable):  #TODO pull out the HTTP server Component
   stats = {'mail' : {}, 'irc' : {}, 'snmp' : {}} 
-  def __init__(self,conf=None):
-    Configurable.__init__(self,DEFAULT_CONFIG)
+  def __init__(self,MODULE_NAME,conf=None):
+    self.NAME = MODULE_NAME
+    newConf = {MODULE_NAME : DEFAULT_CONFIG}
+    Configurable.__init__(self,newConf)
     self.load_conf(conf)
     cherrypy.server.__dict__.update(self.config[MODULE_NAME]["http"])
 
@@ -52,13 +51,13 @@ class mail_shiny(Configurable):  #TODO pull out the HTTP server Component
     #TODO refactor this piece
 
   def eval_parser(self,parsed): 
-    conf = self.config[MODULE_NAME]
+    conf = self.config[self.NAME]
     cherrypy.server.socket_port = parsed.http_port if parsed.http_port else conf['http']['socket_port']
     cherrypy.server.socket_host = parsed.http_host if parsed.http_host else conf['http']['socket_host']
 
   def load_templates(self):
     self.templates = {}
-    for k,v in self.config[MODULE_NAME]['template']['files'].items():
+    for k,v in self.config[self.NAME]['template']['files'].items():
       log.debug("Loading Template:" + str(v) )
       f = open(v)
       self.templates[k] = f.read()
@@ -68,7 +67,7 @@ class mail_shiny(Configurable):  #TODO pull out the HTTP server Component
   def index(self):
     """ will be called when a client requests '/' """
     # TODO write status "LED"s when mails and irc comes in 
-    return "Check out : <a href='mail'>Mail</a> or <a href='irc'>IRC</a> or <a href='mail'>SNMP User</a>stats"
+    return "Check out : <a href='mail'>Mail</a> or <a href='irc'>IRC</a> or <a href='snmp'>SNMP User</a>stats"
   index.exposed=True
   
   # TODO make this more generic if necessary

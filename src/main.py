@@ -1,17 +1,18 @@
 #!/usr/bin/env python2
 import sys,json
-from mail_shiny import mail_shiny
+from shiny import Shiny
 import logging
 import genericore as gen
-log = logging.getLogger('mail_shiny')
+MODULE_NAME='shiny'
+log = logging.getLogger(MODULE_NAME)
 PROTO_VERSION = 1
 DESCRIPTION = 'Makes Statistics shiny'
 
 # set up instances of needed modules
 
 conf = gen.Configurator(PROTO_VERSION,DESCRIPTION)  
-multi = gen.multi_amqp() 
-s = mail_shiny()       # the magic mail parsing class
+multi = gen.multi_amqp(MODULE_NAME) 
+s = Shiny(MODULE_NAME)       # the magic mail parsing class
 
 conf.configure([multi,s]) #set up parser and eval parsed stuff
 
