@@ -3,34 +3,33 @@ from genericore import Configurable
 import pystache,cherrypy
 import logging, sys
 from datetime import datetime
+import modules
+import os
 from os import path
 
 
 log = logging.getLogger('shiny')
 
-DEFAULT_CONFIG = {
-        "http" : {
+TEMPLATE_DIR=path.join(path.dirname(sys.argv[0]) + "/../template/" )
+MODULE_DIR=path.join(path.dirname(sys.argv[0]) + "/modules" )
+
+DEFAULT_CONFIG = { "http" : {
           "socket_port" : 8080,
           "socket_host" : "0.0.0.0"
-          },
-        "template" : {
-            "engine" : "mustache", #currently only mustache is supported,so this entry has no effect
-            #TODO register modules
-            "files" : {
-              "mail" : path.join( path.dirname(sys.argv[0]) + "/../template/mail.mustache")  ,
-              "irc" : path.join( path.dirname(sys.argv[0]) + "/../template/irc.mustache")  ,
-              "snmp" : path.join( path.dirname(sys.argv[0]) + "/../template/snmp.mustache")  
-              }
           }
 }
 
 class Shiny(Configurable):  #TODO pull out the HTTP server Component
-  stats = {'mail' : {}, 'irc' : {}, 'snmp' : {}} 
+  stats = {}
+  avail = [] # available modules (will be written automagically
+  templates = {}
+
   def __init__(self,MODULE_NAME,conf=None):
     self.NAME = MODULE_NAME
     newConf = {MODULE_NAME : DEFAULT_CONFIG}
     Configurable.__init__(self,newConf)
     self.load_conf(conf)
+    self.init_modules()
     cherrypy.server.__dict__.update(self.config[MODULE_NAME]["http"])
 
   def process(self,stats):
@@ -42,8 +41,35 @@ class Shiny(Configurable):  #TODO pull out the HTTP server Component
     cherrypy.tree.mount(self)
     cherrypy.server.quickstart()
     cherrypy.engine.start()
-    self.load_templates()
 
+  def get_modules(self):
+    extension = ".py"
+    list_of_files = [file for file in os.listdir(MODULE_DIR) if file.lower().endswith(extension)]
+
+  def init_modules(self):
+    self.avail = [ getattr(modules,mod) for mod in dir(modules) if not mod.startswith('__')]
+    print "Available Modules " + str(self.avail)
+    for mod in self.avail:
+      log.info('loaded module ' + mod.path)
+      self.register_module(mod)
+      self.load_template(mod)
+      for i in mod.dispatch:
+        self.stats[i] = {}
+
+  def load_template(self,mod):
+    if getattr(mod,'template_name',False):
+      p = TEMPLATE_DIR + 'templatename'
+    else:
+      p = TEMPLATE_DIR + mod.path + '.mustache' # probably not mustache dir?
+    log.debug('Loaded Template: ' +str(p))
+    f = open(p)
+    self.templates[mod.path] = f.read()
+    f.close()
+
+  def register_module(self,mod):
+    setattr(self,mod.path,lambda :mod.process(self))
+    getattr(self,mod.path).exposed=True
+    
   def populate_parser(self,parser): 
     parser.add_argument('--http-port',type=int,dest='http_port',help='Http Server host port',metavar='PORT')   
     parser.add_argument('--http-host',dest='http_host',help='Http Server host Address',metavar='ADDR')   
@@ -54,52 +80,6 @@ class Shiny(Configurable):  #TODO pull out the HTTP server Component
     conf = self.config[self.NAME]
     cherrypy.server.socket_port = parsed.http_port if parsed.http_port else conf['http']['socket_port']
     cherrypy.server.socket_host = parsed.http_host if parsed.http_host else conf['http']['socket_host']
-
-  def load_templates(self):
-    self.templates = {}
-    for k,v in self.config[self.NAME]['template']['files'].items():
-      log.debug("Loading Template:" + str(v) )
-      f = open(v)
-      self.templates[k] = f.read()
-      f.close()
-
-  # path functions
-  def index(self):
-    """ will be called when a client requests '/' """
-    # TODO write status "LED"s when mails and irc comes in 
-    return "Check out : <a href='mail'>Mail</a> or <a href='irc'>IRC</a> or <a href='snmp'>SNMP User</a>stats"
-  index.exposed=True
-  
-  # TODO make this more generic if necessary
-  def mail(self):
-    self.load_templates()
-    if not self.stats['mail']:
-      return "No Mail Statistics received yet!"
-    return pystache.render(self.templates['mail'],self.stats['mail'])
-  mail.exposed=True
-
-  def snmp(self):
-    data = self.stats['snmp']
-    self.load_templates() # only if the template is changing a lot 
-
-    if not data:
-      return "No SNMP Statistics received yet!"
-
-    stache = {'num_clients' : 0, 'mlist' : []}
-    #strip out the timestamp and put it into root object
-    stache['timestamp'] = data['timestamp']
-    del data['timestamp']
-
-    stache['num_clients'] = len(data)
-    for mac,ips in data.items():
-      stache['mlist'].append({'mac': mac, 'ips' : ', '.join(ips)})
-    data['timestamp'] = stache['timestamp']
-    return pystache.render(self.templates['snmp'],stache)
-  snmp.exposed=True
-
-  def irc(self): 
-    return pystache.render(self.templates['irc'],self.stats['irc'])
-  irc.exposed=True
 
   def close_connection(self):
     cherrypy.engine.exit()

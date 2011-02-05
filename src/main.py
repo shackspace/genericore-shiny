@@ -17,7 +17,7 @@ s = Shiny(MODULE_NAME)       # the magic mail parsing class
 conf.configure([multi,s]) #set up parser and eval parsed stuff
 
 # start network connections
-amqp1,amqp2 = multi.create_connection()
+amqp = multi.create_connection()
 s.create_connection()
 # main method
 def cb (ch,method,header,body):
@@ -28,12 +28,11 @@ def cb (ch,method,header,body):
   except Exception as e:
     print 'Something just fuckin happened ' + str(e)
     raise e
-
-amqp1.consume(cb)
-amqp2.consume(cb)
+for i in amqp:
+  i.consume(cb)
 print "waiting for messages"
 try:
-  amqp1.start_loop()
+  amqp[0].start_loop()
 except:
   multi.close_connection() 
   s.close_connection()
