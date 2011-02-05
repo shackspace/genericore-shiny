@@ -29,7 +29,9 @@ def cb (ch,method,header,body):
     print 'Something just fuckin happened ' + str(e)
     raise e
 for i in amqp:
-  i.consume(cb)
+  log.debug('registering new consumer ' +str(i.name))
+
+  i.consume(cb,i.qname)
 print "waiting for messages"
 try:
   amqp[0].start_loop()

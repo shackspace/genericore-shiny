@@ -33,8 +33,10 @@ class Shiny(Configurable):  #TODO pull out the HTTP server Component
     cherrypy.server.__dict__.update(self.config[MODULE_NAME]["http"])
 
   def process(self,stats):
+    #TODO think about what you wanted to do gawddamn!
     log.debug("Received Stats: " + str(stats))
-    self.stats[stats['type']] = stats['data']
+    self.stats[stats['type']] = stats['data'] #TODO do not use the type, but the actual exchange where the data comes from
+
     self.stats[stats['type']]['timestamp'] = datetime.now().ctime()
 
   def create_connection(self):

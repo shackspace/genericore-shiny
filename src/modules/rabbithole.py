@@ -10,7 +10,7 @@ def process(self):
   stache = { 'infos' : [] }
   stache['timestamp'] = data['timestamp']
   del data['timestamp']
-  for k,v in data:
+  for k,v in data.items():
     stache['infos'].append( { 'key' : k , 'value' : v.replace('\n','<br/>') } )
 
   data['timestamp'] = stache['timestamp']

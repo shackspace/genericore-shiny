@@ -1,0 +1,3 @@
+- take exchanges instead of types for the stats
+- think of something how to automate the necessary exchanges allocation
+- think of a way to add mongodb? (simply derive from MongoBackend should do it)

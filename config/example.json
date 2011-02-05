@@ -9,12 +9,20 @@
       "exchanges": {
         "mail_stats": {
           "in": {
-            "exchange": "mail_stats"
+            "exchange": "mail_stats",
+            "type" : "fanout"
+          }
+        },
+        "rabbithole": {
+          "in": {
+            "exchange": "rabbithole",
+            "type" : "fanout"
           }
         },
         "snmp_src": {
           "in": {
-            "exchange": "snmp_src"
+            "exchange": "snmp_src",
+            "type" : "fanout"
           }
         }
       }
